@@ -178,18 +178,16 @@ Target users are financially literate consumers and small-business owners with m
 
 ### Requirement 11: Regulatory Status Indicator
 
-**User Story:** As a User, I want to see whether my bank is under any formal regulatory action, so that I can understand whether regulators have identified serious problems.
+**User Story:** As a User, I want to see my bank's regulatory status, so that I can understand whether regulators have taken formal action against it or closed it.
 
 #### Acceptance Criteria
 
-1. THE Regulatory Status Indicator Card SHALL display any active Enforcement Actions associated with the Institution, sourced from the FDIC API.
-2. WHEN an Institution has one or more active Enforcement Actions, THE Tool SHALL display the Regulatory Status Indicator Card with a visually prominent warning treatment and list each action with its type, issuing regulator, and effective date.
-3. WHEN an Institution has no active Enforcement Actions, THE Regulatory Status Indicator Card SHALL display a confirmation that no active enforcement actions were found in FDIC public records.
-4. THE Regulatory Status Indicator Card SHALL include a plain-English explanation of what Enforcement Actions are and what they mean for depositors.
-5. WHEN an Institution has one or more active Enforcement Actions, THE Tool SHALL surface the Regulatory Status Indicator Card prominently — it SHALL NOT be displayed only in a footer or collapsed section.
-6. WHEN the FDIC API call to retrieve Enforcement Action details fails but the existence of Enforcement Actions is known, THE Tool SHALL still display the Regulatory Status Indicator Card with a visually prominent warning treatment, indicate that enforcement actions exist, and display a message explaining that action details could not be loaded with an option to retry.
-
-> **TBD — Enforcement Action Surfaceability:** The availability and completeness of enforcement action data via the FDIC public API must be verified in the design phase. If enforcement action data is not queryable via the API, the Regulatory Status card SHALL display a notice directing the User to check the FDIC's enforcement actions page directly, with a link.
+1. THE Regulatory Status Indicator Card SHALL display the Institution's receivership or failure status when present, sourced from the FDIC API `/failures` endpoint, including the closure date, resolution type, and acquiring institution name where available.
+2. WHEN an Institution has a record in the FDIC `/failures` endpoint, THE Tool SHALL display the Regulatory Status Indicator Card with a visually prominent warning treatment and a plain-English explanation of what receivership means for depositors.
+3. WHEN an Institution has no record in the FDIC `/failures` endpoint, THE Regulatory Status Indicator Card SHALL display a neutral confirmation that no failure or receivership record was found in FDIC public data — this is a transparency disclosure, not a safety signal.
+4. THE Regulatory Status Indicator Card SHALL include a direct link to the FDIC's enforcement actions portal (`https://www.fdic.gov/bank/individual/enforcement/`) with a plain-English explanation that active enforcement actions (MOUs, consent orders, PCA directives) are published by the FDIC but are not queryable through the public data API used by this Tool.
+5. THE Tool SHALL NOT display a warning treatment on the Regulatory Status Indicator Card solely because enforcement action data is unavailable via the API — absence of queryable data is disclosed as a transparency limitation, not treated as a signal.
+6. THE Regulatory Status Indicator Card SHALL be displayed at the same prominence level as all other Indicator Cards — it SHALL NOT be hidden, collapsed, or relegated to a footer.
 
 ---
 
