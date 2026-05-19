@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Daily Collaboration Log",
+  "description": "Captures every prompt submitted and agent response into a running daily log at .kiro/collaboration-log/YYYY-MM-DD.md. Each entry includes timestamp, truncated prompt, response summary, modified spec/task files, and generated file paths. Appends to the existing day-file or starts a new one each day.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Append a collaboration log entry to `.kiro/collaboration-log/$(date +%Y-%m-%d).md`. If the file does not exist, create it with a markdown header `# Collaboration Log — YYYY-MM-DD`. Do NOT overwrite existing content — only append.\n\nEach entry should follow this format:\n\n---\n## Entry — HH:MM:SS\n\n**Prompt:** (the user's most recent prompt, truncated to 500 characters if longer)\n\n**Response Summary:** (2–4 sentence summary of what the agent did or answered)\n\n**Spec / Task Files Modified:** (list any .kiro/specs/**/*.md files that were created or edited, or \"None\")\n\n**Code Files Generated / Modified:** (list file paths of any source code files created or edited, or \"None\")\n\n---\n\nUse the actual current date and time. Do not fabricate entries. Only log what actually happened in this session turn."
+  },
+  "workspaceFolderName": "bank-safety-tool",
+  "shortName": "daily-collaboration-log"
+}
