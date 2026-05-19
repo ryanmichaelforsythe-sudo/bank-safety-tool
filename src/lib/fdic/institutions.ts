@@ -2,6 +2,12 @@
  * FDIC /institutions endpoint query module.
  *
  * Imports only from @/types/fdic and ./client — no domain types.
+ *
+ * API notes (validated against live API):
+ * - Field for institution name is `NAME` (not INSTNAME)
+ * - Search uses `filters=NAME:query*` (wildcard, no quotes)
+ * - Response items are nested: data[].data.FIELD
+ * - REPDTE format on institutions endpoint is MM/DD/YYYY
  */
 
 import type { FDICInstitution, FDICSearchResponse } from "@/types/fdic";
@@ -10,7 +16,7 @@ import { fdicFetch } from "./client";
 /** Fields requested for search results (disambiguation list) */
 const SEARCH_FIELDS = [
   "CERT",
-  "INSTNAME",
+  "NAME",
   "CITY",
   "STALP",
   "ASSET",
@@ -22,7 +28,7 @@ const SEARCH_FIELDS = [
 /** Fields requested for full institution profile */
 const PROFILE_FIELDS = [
   "CERT",
-  "INSTNAME",
+  "NAME",
   "CITY",
   "STALP",
   "STNAME",
@@ -36,12 +42,10 @@ const PROFILE_FIELDS = [
   "SPECGRPN",
   "REPDTE",
   "FDICSUPV",
-  "REGAGNT",
+  "REGAGENT2",
   "NAMEHCR",
-  "DENOVO",
-  "PROCDATE",
+  "DENESSION",
   "CHANGECODE",
-  "INSCOML",
   "RISESSION",
 ].join(",");
 
@@ -51,7 +55,7 @@ const SEARCH_LIMIT = 25;
  * Search institutions by name, city/state, or FDIC certificate number.
  *
  * - If query is all digits (strict /^\d+$/), filters by CERT directly
- * - Otherwise, uses FDIC search parameter against INSTNAME and CITY
+ * - Otherwise, uses `filters=NAME:query*` for wildcard name matching
  * - Returns inactive/merged institutions (ACTIVE=0) so the UI can display
  *   merger notices per Req 2.3
  *
@@ -76,8 +80,8 @@ export async function searchInstitutions(
   if (isCertLookup) {
     params.filters = `CERT:${trimmed}`;
   } else {
-    params.search = trimmed;
-    params.search_fields = "INSTNAME,CITY";
+    // FDIC API uses filters with wildcard for name search (no quotes)
+    params.filters = `NAME:${trimmed}*`;
   }
 
   return fdicFetch<FDICInstitution>("institutions", params, { revalidate: 300 });
@@ -102,5 +106,5 @@ export async function getInstitution(
     { revalidate: 300 }
   );
 
-  return response.data[0] ?? null;
+  return response.data[0]?.data ?? null;
 }

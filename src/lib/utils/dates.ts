@@ -6,15 +6,32 @@
 const STALE_THRESHOLD_DAYS = 120;
 
 /**
- * Parse an FDIC report date string (YYYYMMDD) into a Date object.
+ * Parse an FDIC report date string into a Date object.
+ * Handles both formats:
+ * - YYYYMMDD (financials endpoint)
+ * - MM/DD/YYYY or M/D/YYYY (institutions and failures endpoints)
  * Returns null if the input is null, undefined, or unparseable.
  */
 export function parseReportDate(repdte: string | null | undefined): Date | null {
-  if (!repdte || repdte.length < 8) return null;
+  if (!repdte) return null;
 
-  const year = parseInt(repdte.slice(0, 4), 10);
-  const month = parseInt(repdte.slice(4, 6), 10) - 1; // JS months are 0-indexed
-  const day = parseInt(repdte.slice(6, 8), 10);
+  let year: number, month: number, day: number;
+
+  if (repdte.includes("/")) {
+    // MM/DD/YYYY or M/D/YYYY format
+    const parts = repdte.split("/");
+    if (parts.length !== 3) return null;
+    month = parseInt(parts[0], 10) - 1; // JS months are 0-indexed
+    day = parseInt(parts[1], 10);
+    year = parseInt(parts[2], 10);
+  } else if (repdte.length >= 8) {
+    // YYYYMMDD format
+    year = parseInt(repdte.slice(0, 4), 10);
+    month = parseInt(repdte.slice(4, 6), 10) - 1;
+    day = parseInt(repdte.slice(6, 8), 10);
+  } else {
+    return null;
+  }
 
   const date = new Date(year, month, day);
   if (isNaN(date.getTime())) return null;

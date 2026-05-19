@@ -14,7 +14,7 @@
 
 import type { FDICSearchResponse } from "@/types/fdic";
 
-const FDIC_BASE_URL = "https://banks.data.fdic.gov/api";
+const FDIC_BASE_URL = "https://api.fdic.gov/banks";
 const TIMEOUT_MS = 10_000;
 const MAX_RETRIES = 3;
 const RETRY_DELAYS_MS = [1000, 2000, 4000];
@@ -168,13 +168,13 @@ function assertValidResponse(
   endpoint: string,
   status: number
 ): asserts json is { data: unknown[]; totals: { count: number } } {
+  const obj = json as Record<string, unknown>;
   if (
     typeof json !== "object" ||
     json === null ||
-    !Array.isArray((json as Record<string, unknown>).data) ||
-    typeof (json as Record<string, unknown>).totals !== "object" ||
-    typeof ((json as Record<string, unknown>).totals as Record<string, unknown>)
-      ?.count !== "number"
+    !Array.isArray(obj.data) ||
+    typeof obj.totals !== "object" ||
+    typeof (obj.totals as Record<string, unknown>)?.count !== "number"
   ) {
     throw new FDICAPIError(
       status,

@@ -5,7 +5,7 @@
  * Queries on-demand per institution (not bulk fetch).
  */
 
-import type { FDICFailure, FDICSearchResponse } from "@/types/fdic";
+import type { FDICFailure } from "@/types/fdic";
 import { fdicFetch } from "./client";
 
 const FAILURE_FIELDS = [
@@ -38,5 +38,5 @@ export async function getFailureRecord(
     { revalidate: 3600 }
   );
 
-  return response.data[0] ?? null;
+  return response.data[0]?.data ?? null;
 }

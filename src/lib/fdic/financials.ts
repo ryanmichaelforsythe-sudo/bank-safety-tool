@@ -4,7 +4,7 @@
  * Imports only from @/types/fdic and ./client — no domain types.
  */
 
-import type { FDICFinancials, FDICSearchResponse } from "@/types/fdic";
+import type { FDICFinancials } from "@/types/fdic";
 import { fdicFetch } from "./client";
 
 /** All financial fields needed for indicator card calculations */
@@ -59,8 +59,8 @@ const PEER_LIMIT = 10_000;
 export async function getFinancials(
   cert: number,
   quarters: number = DEFAULT_QUARTERS
-): Promise<FDICSearchResponse<FDICFinancials>> {
-  return fdicFetch<FDICFinancials>(
+): Promise<FDICFinancials[]> {
+  const response = await fdicFetch<FDICFinancials>(
     "financials",
     {
       filters: `CERT:${cert}`,
@@ -71,6 +71,8 @@ export async function getFinancials(
     },
     { revalidate: 300 }
   );
+
+  return response.data.map((item) => item.data);
 }
 
 /**
@@ -85,8 +87,8 @@ export async function getFinancials(
  */
 export async function getPeerFinancials(
   specgrp: number
-): Promise<FDICSearchResponse<FDICFinancials>> {
-  return fdicFetch<FDICFinancials>(
+): Promise<FDICFinancials[]> {
+  const response = await fdicFetch<FDICFinancials>(
     "financials",
     {
       filters: `SPECGRP:${specgrp}`,
@@ -97,4 +99,6 @@ export async function getPeerFinancials(
     },
     { revalidate: 86400 }
   );
+
+  return response.data.map((item) => item.data);
 }
