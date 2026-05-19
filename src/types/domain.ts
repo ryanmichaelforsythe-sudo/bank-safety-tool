@@ -18,6 +18,7 @@ export type EmptyStateReason =
   | "merged"
   | "in_receivership"
   | "data_not_reported"
+  | "insufficient_history"
   | "api_error"
   | "not_queryable"; // For metrics like charge-off rate that FDIC API doesn't expose
 
