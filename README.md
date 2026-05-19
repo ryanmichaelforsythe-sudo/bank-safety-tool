@@ -6,7 +6,11 @@ A consumer-facing web tool that lets users look up any U.S. bank and see a plain
 
 ---
 
-## Quick Start (once Node is installed)
+## Live Demo
+
+**[https://bank-safety-tool.vercel.app](https://bank-safety-tool.vercel.app)**
+
+## Quick Start (local)
 
 ```bash
 npm install
