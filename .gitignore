@@ -1,1 +1,29 @@
+# Dependencies
 node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Production build
+build/
+
+# Environment variables (none needed — FDIC API requires no auth)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Test coverage
+coverage/
+
+# OS
+.DS_Store
