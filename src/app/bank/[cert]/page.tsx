@@ -30,6 +30,7 @@ import { EarningsCard } from "@/components/cards/EarningsCard";
 import { LiquidityCard } from "@/components/cards/LiquidityCard";
 import { UninsuredDepositCard } from "@/components/cards/UninsuredDepositCard";
 import { DepositTrendCard } from "@/components/cards/DepositTrendCard";
+import { RegulatoryStatusCard } from "@/components/cards/RegulatoryStatusCard";
 import type { FailureInfo, MergerInfo } from "@/types/domain";
 
 interface PageProps {
@@ -290,6 +291,10 @@ export default async function BankPage({ params }: PageProps) {
           quartersAvailable={context.quartersAvailable}
         />
         {/* Remaining 1 card — Task 19 */}
+        <RegulatoryStatusCard
+          failureInfo={failureInfo}
+          dataAsOf={context.dataAsOf}
+        />
       </section>
 
       {/* Methodology link */}
