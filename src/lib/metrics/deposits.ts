@@ -41,7 +41,7 @@ export function computeUninsuredConcentration(
   const { DEPNIDOM, DEPFOR, DEP } = financials;
 
   // Required fields — null means data not reported
-  if (DEPNIDOM === null || DEP === null || DEP === 0) {
+  if (DEPNIDOM == null || DEP == null || DEP === 0) {
     return missing("data_not_reported", asOf);
   }
 
@@ -72,13 +72,13 @@ export function computeDepositTrend(
   for (const q of financials) {
     const quarter = formatQuarter(q.REPDTE);
 
-    if (q.DEP !== null) {
+    if (q.DEP != null) {
       total.push({ quarter, value: q.DEP });
     }
-    if (q.DEPINS !== null) {
+    if (q.DEPINS != null) {
       insured.push({ quarter, value: q.DEPINS });
     }
-    if (q.DEPNIDOM !== null) {
+    if (q.DEPNIDOM != null) {
       uninsuredDomestic.push({ quarter, value: q.DEPNIDOM });
     }
   }

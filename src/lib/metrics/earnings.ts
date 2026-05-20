@@ -36,12 +36,12 @@ export function computeEarnings(
   const { ROAQ, NIMY } = financials;
 
   const roa =
-    ROAQ !== null
+    ROAQ != null
       ? available(ROAQ, formatPercent(ROAQ), asOf)
       : missing("data_not_reported", asOf);
 
   const nim =
-    NIMY !== null
+    NIMY != null
       ? available(NIMY, formatPercent(NIMY), asOf)
       : missing("data_not_reported", asOf);
 
@@ -67,10 +67,10 @@ export function computeEarningsTrend(
   for (const q of financials) {
     const quarter = formatQuarter(q.REPDTE);
 
-    if (q.ROAQ !== null) {
+    if (q.ROAQ != null) {
       roaTrend.push({ quarter, value: q.ROAQ });
     }
-    if (q.NIMY !== null) {
+    if (q.NIMY != null) {
       nimTrend.push({ quarter, value: q.NIMY });
     }
   }

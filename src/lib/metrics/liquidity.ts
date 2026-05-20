@@ -37,13 +37,13 @@ export function computeLiquidity(
 
   // Loan-to-deposit ratio — directly from FDIC field
   const loanToDepositRatio =
-    LNLSDEPR !== null
+    LNLSDEPR != null
       ? available(LNLSDEPR, formatPercent(LNLSDEPR), asOf)
       : missing("data_not_reported", asOf);
 
   // Cash + securities to assets — derived
   let cashSecuritiesToAssetsRatio: MetricValue;
-  if (CASH !== null && SC !== null && ASSET !== null && ASSET > 0) {
+  if (CASH != null && SC != null && ASSET != null && ASSET > 0) {
     const ratio = ((CASH + SC) / ASSET) * 100;
     cashSecuritiesToAssetsRatio = available(ratio, formatPercent(ratio), asOf);
   } else {
@@ -75,10 +75,10 @@ export function computeLiquidityTrend(
   for (const q of financials) {
     const quarter = formatQuarter(q.REPDTE);
 
-    if (q.LNLSDEPR !== null) {
+    if (q.LNLSDEPR != null) {
       loanToDepositTrend.push({ quarter, value: q.LNLSDEPR });
     }
-    if (q.CASH !== null && q.SC !== null && q.ASSET !== null && q.ASSET > 0) {
+    if (q.CASH != null && q.SC != null && q.ASSET != null && q.ASSET > 0) {
       cashSecuritiesTrend.push({
         quarter,
         value: ((q.CASH + q.SC) / q.ASSET) * 100,

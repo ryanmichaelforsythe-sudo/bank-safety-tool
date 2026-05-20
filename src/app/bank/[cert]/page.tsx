@@ -17,6 +17,7 @@ import { computeEarnings, computeEarningsTrend } from "@/lib/metrics/earnings";
 import { computeLiquidity, computeLiquidityTrend } from "@/lib/metrics/liquidity";
 import { computeUninsuredConcentration, computeDepositTrend } from "@/lib/metrics/deposits";
 import { computePeerMedian, buildPeerComparison } from "@/lib/metrics/peers";
+import { missing } from "@/lib/metrics/metricValue";
 import { parseReportDate } from "@/lib/utils/dates";
 import { InstitutionHeader } from "@/components/institution/InstitutionHeader";
 import { InstitutionStatusBadge } from "@/components/institution/InstitutionStatusBadge";
@@ -91,9 +92,9 @@ export default async function BankPage({ params }: PageProps) {
   const capitalMetrics = mostRecentQuarter
     ? computeCapitalAdequacy(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
     : {
-        totalCapitalRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
-        leverageRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
-        tier1Ratio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        totalCapitalRatio: missing(context.defaultEmptyReason ?? "data_not_reported", null),
+        leverageRatio: missing(context.defaultEmptyReason ?? "data_not_reported", null),
+        tier1Ratio: missing(context.defaultEmptyReason ?? "data_not_reported", null),
         category: null,
       };
 
@@ -105,7 +106,7 @@ export default async function BankPage({ params }: PageProps) {
   const leveragePeerMedian = peerData.length > 0
     ? (() => {
         const ratios = peerData
-          .filter((p) => p.EQ !== null && p.ASSET !== null && p.ASSET > 0)
+          .filter((p) => p.EQ != null && p.ASSET != null && p.ASSET > 0)
           .map((p) => ((p.EQ as number) / (p.ASSET as number)) * 100);
         if (ratios.length === 0) return null;
         ratios.sort((a, b) => a - b);
@@ -128,8 +129,8 @@ export default async function BankPage({ params }: PageProps) {
   const assetQualityMetrics = mostRecentQuarter
     ? computeAssetQuality(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
     : {
-        nplRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
-        chargeOffRate: { kind: "missing" as const, reason: "not_queryable" as const, asOf: null },
+        nplRatio: missing(context.defaultEmptyReason ?? "data_not_reported", null),
+        chargeOffRate: missing("not_queryable", null),
       };
   const nplTrend = computeAssetQualityTrend(financials, context);
   const nplPeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "LNLSNTV") : null;
@@ -141,8 +142,8 @@ export default async function BankPage({ params }: PageProps) {
   const earningsMetrics = mostRecentQuarter
     ? computeEarnings(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
     : {
-        roa: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
-        nim: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        roa: missing(context.defaultEmptyReason ?? "data_not_reported", null),
+        nim: missing(context.defaultEmptyReason ?? "data_not_reported", null),
       };
   const earningsTrend = computeEarningsTrend(financials, context);
   const roaPeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "ROAQ") : null;
@@ -158,8 +159,8 @@ export default async function BankPage({ params }: PageProps) {
   const liquidityMetrics = mostRecentQuarter
     ? computeLiquidity(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
     : {
-        loanToDepositRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
-        cashSecuritiesToAssetsRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        loanToDepositRatio: missing(context.defaultEmptyReason ?? "data_not_reported", null),
+        cashSecuritiesToAssetsRatio: missing(context.defaultEmptyReason ?? "data_not_reported", null),
       };
   const liquidityTrend = computeLiquidityTrend(financials, context);
   const ltdPeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "LNLSDEPR") : null;
@@ -167,7 +168,7 @@ export default async function BankPage({ params }: PageProps) {
   const cashSecPeerMedian = peerData.length > 0
     ? (() => {
         const ratios = peerData
-          .filter((p) => p.CASH !== null && p.SC !== null && p.ASSET !== null && (p.ASSET as number) > 0)
+          .filter((p) => p.CASH != null && p.SC != null && p.ASSET != null && (p.ASSET as number) > 0)
           .map((p) => (((p.CASH as number) + (p.SC as number)) / (p.ASSET as number)) * 100);
         if (ratios.length === 0) return null;
         ratios.sort((a, b) => a - b);
@@ -185,12 +186,12 @@ export default async function BankPage({ params }: PageProps) {
   // --- Compute Uninsured Deposit Concentration (snapshot only) ---
   const uninsuredConcentration = mostRecentQuarter
     ? computeUninsuredConcentration(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
-    : { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null };
+    : missing(context.defaultEmptyReason ?? "data_not_reported", null);
   // Peer median for uninsured concentration: compute (DEPNIDOM + DEPFOR) / DEP for each peer
   const uninsuredPeerMedian = peerData.length > 0
     ? (() => {
         const ratios = peerData
-          .filter((p) => p.DEPNIDOM !== null && p.DEP !== null && (p.DEP as number) > 0)
+          .filter((p) => p.DEPNIDOM != null && p.DEP != null && (p.DEP as number) > 0)
           .map((p) => (((p.DEPNIDOM as number) + ((p.DEPFOR as number) ?? 0)) / (p.DEP as number)) * 100);
         if (ratios.length === 0) return null;
         ratios.sort((a, b) => a - b);

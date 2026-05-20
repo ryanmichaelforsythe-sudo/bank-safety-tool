@@ -38,7 +38,7 @@ export function computeAssetQuality(
 
   // NPL ratio — directly from FDIC field
   const nplRatio =
-    LNLSNTV !== null
+    LNLSNTV != null
       ? available(LNLSNTV, formatPercent(LNLSNTV), asOf)
       : missing("data_not_reported", asOf);
 
@@ -62,7 +62,7 @@ export function computeAssetQualityTrend(
   const trend: TrendDataPoint[] = [];
 
   for (const q of financials) {
-    if (q.LNLSNTV !== null) {
+    if (q.LNLSNTV != null) {
       trend.push({ quarter: formatQuarter(q.REPDTE), value: q.LNLSNTV });
     }
   }

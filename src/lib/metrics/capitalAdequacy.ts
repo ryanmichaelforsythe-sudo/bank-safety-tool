@@ -120,14 +120,14 @@ export function computeCapitalAdequacy(
 
   // Total risk-based capital ratio — directly from FDIC
   const totalCapitalRatio =
-    RBCRWAJ !== null
+    RBCRWAJ != null
       ? available(RBCRWAJ, formatPercent(RBCRWAJ), asOf)
       : missing("data_not_reported", asOf);
 
   // Leverage ratio — EQ / ASSET (approximates Tier 1 leverage)
   let leverageRatio: MetricValue;
   let leverageValue: number | null = null;
-  if (EQ !== null && ASSET !== null && ASSET > 0) {
+  if (EQ != null && ASSET != null && ASSET > 0) {
     leverageValue = (EQ / ASSET) * 100;
     leverageRatio = available(leverageValue, formatPercent(leverageValue), asOf);
   } else {
@@ -137,7 +137,7 @@ export function computeCapitalAdequacy(
   // Tier 1 ratio — RBCT1J (dollars) / ASSET (dollars) * 100
   let tier1Ratio: MetricValue;
   let tier1Value: number | null = null;
-  if (RBCT1J !== null && ASSET !== null && ASSET > 0) {
+  if (RBCT1J != null && ASSET != null && ASSET > 0) {
     tier1Value = (RBCT1J / ASSET) * 100;
     tier1Ratio = available(tier1Value, formatPercent(tier1Value), asOf);
   } else {
@@ -146,7 +146,7 @@ export function computeCapitalAdequacy(
 
   // Categorize — only if all three ratios are available
   let category: CapitalCategory | null = null;
-  if (tier1Value !== null && RBCRWAJ !== null && leverageValue !== null) {
+  if (tier1Value != null && RBCRWAJ != null && leverageValue != null) {
     category = categorizeCapital(tier1Value, RBCRWAJ, leverageValue);
   }
 
@@ -172,11 +172,11 @@ export function computeCapitalTrend(
   for (const q of financials) {
     const quarter = formatQuarter(q.REPDTE);
 
-    if (q.RBCRWAJ !== null) {
+    if (q.RBCRWAJ != null) {
       tier1Trend.push({ quarter, value: q.RBCRWAJ });
     }
 
-    if (q.EQ !== null && q.ASSET !== null && q.ASSET > 0) {
+    if (q.EQ != null && q.ASSET != null && q.ASSET > 0) {
       equityTrend.push({ quarter, value: (q.EQ / q.ASSET) * 100 });
     }
   }
