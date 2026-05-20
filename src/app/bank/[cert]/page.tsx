@@ -15,6 +15,7 @@ import { computeCapitalAdequacy } from "@/lib/metrics/capitalAdequacy";
 import { computeAssetQuality, computeAssetQualityTrend } from "@/lib/metrics/assetQuality";
 import { computeEarnings, computeEarningsTrend } from "@/lib/metrics/earnings";
 import { computeLiquidity, computeLiquidityTrend } from "@/lib/metrics/liquidity";
+import { computeUninsuredConcentration } from "@/lib/metrics/deposits";
 import { computePeerMedian, buildPeerComparison } from "@/lib/metrics/peers";
 import { parseReportDate } from "@/lib/utils/dates";
 import { InstitutionHeader } from "@/components/institution/InstitutionHeader";
@@ -27,6 +28,7 @@ import { CapitalAdequacyCard } from "@/components/cards/CapitalAdequacyCard";
 import { AssetQualityCard } from "@/components/cards/AssetQualityCard";
 import { EarningsCard } from "@/components/cards/EarningsCard";
 import { LiquidityCard } from "@/components/cards/LiquidityCard";
+import { UninsuredDepositCard } from "@/components/cards/UninsuredDepositCard";
 import type { FailureInfo, MergerInfo } from "@/types/domain";
 
 interface PageProps {
@@ -178,6 +180,26 @@ export default async function BankPage({ params }: PageProps) {
     ? buildPeerComparison(liquidityMetrics.cashSecuritiesToAssetsRatio.value, cashSecPeerMedian, peerGroupName)
     : null;
 
+  // --- Compute Uninsured Deposit Concentration (snapshot only) ---
+  const uninsuredConcentration = mostRecentQuarter
+    ? computeUninsuredConcentration(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
+    : { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null };
+  // Peer median for uninsured concentration: compute (DEPNIDOM + DEPFOR) / DEP for each peer
+  const uninsuredPeerMedian = peerData.length > 0
+    ? (() => {
+        const ratios = peerData
+          .filter((p) => p.DEPNIDOM !== null && p.DEP !== null && (p.DEP as number) > 0)
+          .map((p) => (((p.DEPNIDOM as number) + ((p.DEPFOR as number) ?? 0)) / (p.DEP as number)) * 100);
+        if (ratios.length === 0) return null;
+        ratios.sort((a, b) => a - b);
+        const mid = Math.floor(ratios.length / 2);
+        return ratios.length % 2 === 0 ? (ratios[mid - 1] + ratios[mid]) / 2 : ratios[mid];
+      })()
+    : null;
+  const uninsuredPeerComp = uninsuredConcentration.kind === "available"
+    ? buildPeerComparison(uninsuredConcentration.value, uninsuredPeerMedian, peerGroupName)
+    : null;
+
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       {/* Navigation */}
@@ -251,6 +273,12 @@ export default async function BankPage({ params }: PageProps) {
           dataAsOf={context.dataAsOf}
         />
         {/* Remaining 3 cards — Tasks 17-19 */}
+        <UninsuredDepositCard
+          uninsuredConcentration={uninsuredConcentration}
+          peerComparison={uninsuredPeerComp}
+          dataAsOf={context.dataAsOf}
+        />
+        {/* Remaining 2 cards — Tasks 18-19 */}
       </section>
 
       {/* Methodology link */}
