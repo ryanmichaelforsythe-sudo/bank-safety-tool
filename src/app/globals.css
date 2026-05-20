@@ -5,7 +5,7 @@
 :root {
   /* Regulatory capital category color palette */
   --color-capital-well: #16a34a;              /* green-600 */
-  --color-capital-adequate: #2563eb;          /* blue-600 */
+  --color-capital-adequate: #6b7280;          /* gray-500 — muted neutral, distinct from well */
   --color-capital-under: #d97706;             /* amber-600 */
   --color-capital-significantly-under: #dc2626; /* red-600 */
   --color-capital-critically-under: #7f1d1d;  /* red-900 */

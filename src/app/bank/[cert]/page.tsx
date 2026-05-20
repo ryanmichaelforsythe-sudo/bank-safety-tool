@@ -8,9 +8,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getInstitution } from "@/lib/fdic/institutions";
-import { getFinancials } from "@/lib/fdic/financials";
+import { getFinancials, getPeerFinancials } from "@/lib/fdic/financials";
 import { getFailureRecord } from "@/lib/fdic/failures";
 import { resolveInstitutionStatus } from "@/lib/metrics/institutionStatus";
+import { computeCapitalAdequacy } from "@/lib/metrics/capitalAdequacy";
+import { computePeerMedian, buildPeerComparison } from "@/lib/metrics/peers";
 import { parseReportDate } from "@/lib/utils/dates";
 import { InstitutionHeader } from "@/components/institution/InstitutionHeader";
 import { InstitutionStatusBadge } from "@/components/institution/InstitutionStatusBadge";
@@ -18,6 +20,7 @@ import { DataFreshnessNotice } from "@/components/institution/DataFreshnessNotic
 import { FailureNotice } from "@/components/institution/FailureNotice";
 import { MergerNotice } from "@/components/institution/MergerNotice";
 import { NewlyCharteredNotice } from "@/components/institution/NewlyCharteredNotice";
+import { CapitalAdequacyCard } from "@/components/cards/CapitalAdequacyCard";
 import type { FailureInfo, MergerInfo } from "@/types/domain";
 
 interface PageProps {
@@ -30,7 +33,7 @@ export default async function BankPage({ params }: PageProps) {
     notFound();
   }
 
-  // Parallel fetch — all three calls fire simultaneously
+  // Parallel fetch — institution, financials, and failure fire simultaneously
   const [institution, financials, failure] = await Promise.all([
     getInstitution(cert),
     getFinancials(cert),
@@ -40,6 +43,11 @@ export default async function BankPage({ params }: PageProps) {
   if (!institution) {
     notFound();
   }
+
+  // Fetch peer financials now that we know the SPECGRP
+  const peerData = institution.SPECGRP
+    ? await getPeerFinancials(institution.SPECGRP)
+    : [];
 
   // Resolve institution status once — consumed by all downstream components
   const context = resolveInstitutionStatus(institution, financials, failure);
@@ -67,6 +75,44 @@ export default async function BankPage({ params }: PageProps) {
       : null;
 
   const isNewlyChartered = context.quartersAvailable > 0 && context.quartersAvailable < 4;
+
+  // --- Compute Capital Adequacy metrics ---
+  const mostRecentQuarter = financials[0] ?? null;
+  const capitalMetrics = mostRecentQuarter
+    ? computeCapitalAdequacy(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
+    : {
+        totalCapitalRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        leverageRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        tier1Ratio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        category: null,
+      };
+
+  // Peer comparisons for capital ratios
+  const peerGroupName = institution.SPECGRPN ?? "Peer Group";
+  const tier1PeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "RBCT1J") : null;
+  const totalPeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "RBCRWAJ") : null;
+  // Leverage peer median: compute EQ/ASSET for each peer
+  const leveragePeerMedian = peerData.length > 0
+    ? (() => {
+        const ratios = peerData
+          .filter((p) => p.EQ !== null && p.ASSET !== null && p.ASSET > 0)
+          .map((p) => ((p.EQ as number) / (p.ASSET as number)) * 100);
+        if (ratios.length === 0) return null;
+        ratios.sort((a, b) => a - b);
+        const mid = Math.floor(ratios.length / 2);
+        return ratios.length % 2 === 0 ? (ratios[mid - 1] + ratios[mid]) / 2 : ratios[mid];
+      })()
+    : null;
+
+  const tier1PeerComp = capitalMetrics.tier1Ratio.kind === "available"
+    ? buildPeerComparison(capitalMetrics.tier1Ratio.value, tier1PeerMedian, peerGroupName)
+    : null;
+  const totalPeerComp = capitalMetrics.totalCapitalRatio.kind === "available"
+    ? buildPeerComparison(capitalMetrics.totalCapitalRatio.value, totalPeerMedian, peerGroupName)
+    : null;
+  const leveragePeerComp = capitalMetrics.leverageRatio.kind === "available"
+    ? buildPeerComparison(capitalMetrics.leverageRatio.value, leveragePeerMedian, peerGroupName)
+    : null;
 
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 max-w-4xl mx-auto">
@@ -98,11 +144,20 @@ export default async function BankPage({ params }: PageProps) {
         <NewlyCharteredNotice quartersAvailable={context.quartersAvailable} />
       )}
 
-      {/* Indicator cards placeholder — Tasks 12-19 */}
-      <section className="mt-8" aria-label="Financial health indicators">
-        <p className="text-sm text-gray-400">
-          Indicator cards will render here (Tasks 12–19).
-        </p>
+      {/* Indicator cards */}
+      <section className="mt-8 grid gap-4 sm:grid-cols-1 lg:grid-cols-2" aria-label="Financial health indicators">
+        {/* Capital Adequacy — Task 12 */}
+        <CapitalAdequacyCard
+          category={capitalMetrics.category}
+          tier1Ratio={capitalMetrics.tier1Ratio}
+          totalCapitalRatio={capitalMetrics.totalCapitalRatio}
+          leverageRatio={capitalMetrics.leverageRatio}
+          tier1PeerComparison={tier1PeerComp}
+          totalPeerComparison={totalPeerComp}
+          leveragePeerComparison={leveragePeerComp}
+          dataAsOf={context.dataAsOf}
+        />
+        {/* Remaining 6 cards — Tasks 14-19 */}
       </section>
 
       {/* Methodology link */}

@@ -87,40 +87,70 @@ export function categorizeCapital(
 }
 
 /**
- * Compute capital adequacy metrics for a single quarter (point-in-time).
+ * Compute all capital adequacy metrics for a single quarter (point-in-time).
  * Takes singular FDICFinancials (most recent quarter).
+ *
+ * Returns:
+ * - totalCapitalRatio: RBCRWAJ (total risk-based capital ratio, directly from FDIC)
+ * - leverageRatio: EQ / ASSET * 100 (equity-to-assets, approximates leverage)
+ * - tier1Ratio: RBCT1J / ASSET * 100 (Tier 1 capital / total assets, approximation)
+ * - category: FDIC-defined capital category based on all three ratios
  */
 export function computeCapitalAdequacy(
   financials: FDICFinancials,
   asOf: Date,
   context: InstitutionContext
-): { tier1Ratio: MetricValue; equityToAssetsRatio: MetricValue } {
+): {
+  totalCapitalRatio: MetricValue;
+  leverageRatio: MetricValue;
+  tier1Ratio: MetricValue;
+  category: CapitalCategory | null;
+} {
   // Institution-level override
   if (context.defaultEmptyReason) {
     return {
+      totalCapitalRatio: missing(context.defaultEmptyReason, asOf),
+      leverageRatio: missing(context.defaultEmptyReason, asOf),
       tier1Ratio: missing(context.defaultEmptyReason, asOf),
-      equityToAssetsRatio: missing(context.defaultEmptyReason, asOf),
+      category: null,
     };
   }
 
-  const { RBCRWAJ, EQ, ASSET } = financials;
+  const { RBCRWAJ, RBCT1J, EQ, ASSET } = financials;
 
-  // Tier 1 ratio — RBCRWAJ is the total risk-based capital ratio from FDIC
-  const tier1Ratio =
+  // Total risk-based capital ratio — directly from FDIC
+  const totalCapitalRatio =
     RBCRWAJ !== null
       ? available(RBCRWAJ, formatPercent(RBCRWAJ), asOf)
       : missing("data_not_reported", asOf);
 
-  // Equity-to-assets ratio — derived from EQ / ASSET
-  let equityToAssetsRatio: MetricValue;
+  // Leverage ratio — EQ / ASSET (approximates Tier 1 leverage)
+  let leverageRatio: MetricValue;
+  let leverageValue: number | null = null;
   if (EQ !== null && ASSET !== null && ASSET > 0) {
-    const ratio = (EQ / ASSET) * 100;
-    equityToAssetsRatio = available(ratio, formatPercent(ratio), asOf);
+    leverageValue = (EQ / ASSET) * 100;
+    leverageRatio = available(leverageValue, formatPercent(leverageValue), asOf);
   } else {
-    equityToAssetsRatio = missing("data_not_reported", asOf);
+    leverageRatio = missing("data_not_reported", asOf);
   }
 
-  return { tier1Ratio, equityToAssetsRatio };
+  // Tier 1 ratio — RBCT1J (dollars) / ASSET (dollars) * 100
+  let tier1Ratio: MetricValue;
+  let tier1Value: number | null = null;
+  if (RBCT1J !== null && ASSET !== null && ASSET > 0) {
+    tier1Value = (RBCT1J / ASSET) * 100;
+    tier1Ratio = available(tier1Value, formatPercent(tier1Value), asOf);
+  } else {
+    tier1Ratio = missing("data_not_reported", asOf);
+  }
+
+  // Categorize — only if all three ratios are available
+  let category: CapitalCategory | null = null;
+  if (tier1Value !== null && RBCRWAJ !== null && leverageValue !== null) {
+    category = categorizeCapital(tier1Value, RBCRWAJ, leverageValue);
+  }
+
+  return { totalCapitalRatio, leverageRatio, tier1Ratio, category };
 }
 
 /**
