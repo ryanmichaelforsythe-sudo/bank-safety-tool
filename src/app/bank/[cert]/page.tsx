@@ -12,6 +12,7 @@ import { getFinancials, getPeerFinancials } from "@/lib/fdic/financials";
 import { getFailureRecord } from "@/lib/fdic/failures";
 import { resolveInstitutionStatus } from "@/lib/metrics/institutionStatus";
 import { computeCapitalAdequacy } from "@/lib/metrics/capitalAdequacy";
+import { computeAssetQuality, computeAssetQualityTrend } from "@/lib/metrics/assetQuality";
 import { computePeerMedian, buildPeerComparison } from "@/lib/metrics/peers";
 import { parseReportDate } from "@/lib/utils/dates";
 import { InstitutionHeader } from "@/components/institution/InstitutionHeader";
@@ -21,6 +22,7 @@ import { FailureNotice } from "@/components/institution/FailureNotice";
 import { MergerNotice } from "@/components/institution/MergerNotice";
 import { NewlyCharteredNotice } from "@/components/institution/NewlyCharteredNotice";
 import { CapitalAdequacyCard } from "@/components/cards/CapitalAdequacyCard";
+import { AssetQualityCard } from "@/components/cards/AssetQualityCard";
 import type { FailureInfo, MergerInfo } from "@/types/domain";
 
 interface PageProps {
@@ -114,6 +116,19 @@ export default async function BankPage({ params }: PageProps) {
     ? buildPeerComparison(capitalMetrics.leverageRatio.value, leveragePeerMedian, peerGroupName)
     : null;
 
+  // --- Compute Asset Quality metrics ---
+  const assetQualityMetrics = mostRecentQuarter
+    ? computeAssetQuality(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
+    : {
+        nplRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        chargeOffRate: { kind: "missing" as const, reason: "not_queryable" as const, asOf: null },
+      };
+  const nplTrend = computeAssetQualityTrend(financials, context);
+  const nplPeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "LNLSNTV") : null;
+  const nplPeerComp = assetQualityMetrics.nplRatio.kind === "available"
+    ? buildPeerComparison(assetQualityMetrics.nplRatio.value, nplPeerMedian, peerGroupName)
+    : null;
+
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       {/* Navigation */}
@@ -158,6 +173,15 @@ export default async function BankPage({ params }: PageProps) {
           dataAsOf={context.dataAsOf}
         />
         {/* Remaining 6 cards — Tasks 14-19 */}
+        <AssetQualityCard
+          nplRatio={assetQualityMetrics.nplRatio}
+          chargeOffRate={assetQualityMetrics.chargeOffRate}
+          nplPeerComparison={nplPeerComp}
+          nplTrend={nplTrend}
+          cert={cert}
+          dataAsOf={context.dataAsOf}
+        />
+        {/* Remaining 5 cards — Tasks 15-19 */}
       </section>
 
       {/* Methodology link */}
