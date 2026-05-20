@@ -13,6 +13,7 @@ import { getFailureRecord } from "@/lib/fdic/failures";
 import { resolveInstitutionStatus } from "@/lib/metrics/institutionStatus";
 import { computeCapitalAdequacy } from "@/lib/metrics/capitalAdequacy";
 import { computeAssetQuality, computeAssetQualityTrend } from "@/lib/metrics/assetQuality";
+import { computeEarnings, computeEarningsTrend } from "@/lib/metrics/earnings";
 import { computePeerMedian, buildPeerComparison } from "@/lib/metrics/peers";
 import { parseReportDate } from "@/lib/utils/dates";
 import { InstitutionHeader } from "@/components/institution/InstitutionHeader";
@@ -23,6 +24,7 @@ import { MergerNotice } from "@/components/institution/MergerNotice";
 import { NewlyCharteredNotice } from "@/components/institution/NewlyCharteredNotice";
 import { CapitalAdequacyCard } from "@/components/cards/CapitalAdequacyCard";
 import { AssetQualityCard } from "@/components/cards/AssetQualityCard";
+import { EarningsCard } from "@/components/cards/EarningsCard";
 import type { FailureInfo, MergerInfo } from "@/types/domain";
 
 interface PageProps {
@@ -129,6 +131,23 @@ export default async function BankPage({ params }: PageProps) {
     ? buildPeerComparison(assetQualityMetrics.nplRatio.value, nplPeerMedian, peerGroupName)
     : null;
 
+  // --- Compute Earnings metrics ---
+  const earningsMetrics = mostRecentQuarter
+    ? computeEarnings(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
+    : {
+        roa: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        nim: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+      };
+  const earningsTrend = computeEarningsTrend(financials, context);
+  const roaPeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "ROAQ") : null;
+  const nimPeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "NIMY") : null;
+  const roaPeerComp = earningsMetrics.roa.kind === "available"
+    ? buildPeerComparison(earningsMetrics.roa.value, roaPeerMedian, peerGroupName)
+    : null;
+  const nimPeerComp = earningsMetrics.nim.kind === "available"
+    ? buildPeerComparison(earningsMetrics.nim.value, nimPeerMedian, peerGroupName)
+    : null;
+
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       {/* Navigation */}
@@ -182,6 +201,16 @@ export default async function BankPage({ params }: PageProps) {
           dataAsOf={context.dataAsOf}
         />
         {/* Remaining 5 cards — Tasks 15-19 */}
+        <EarningsCard
+          roa={earningsMetrics.roa}
+          nim={earningsMetrics.nim}
+          roaPeerComparison={roaPeerComp}
+          nimPeerComparison={nimPeerComp}
+          roaTrend={earningsTrend.roaTrend}
+          nimTrend={earningsTrend.nimTrend}
+          dataAsOf={context.dataAsOf}
+        />
+        {/* Remaining 4 cards — Tasks 16-19 */}
       </section>
 
       {/* Methodology link */}
