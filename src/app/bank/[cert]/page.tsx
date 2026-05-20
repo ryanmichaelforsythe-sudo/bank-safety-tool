@@ -15,7 +15,7 @@ import { computeCapitalAdequacy } from "@/lib/metrics/capitalAdequacy";
 import { computeAssetQuality, computeAssetQualityTrend } from "@/lib/metrics/assetQuality";
 import { computeEarnings, computeEarningsTrend } from "@/lib/metrics/earnings";
 import { computeLiquidity, computeLiquidityTrend } from "@/lib/metrics/liquidity";
-import { computeUninsuredConcentration } from "@/lib/metrics/deposits";
+import { computeUninsuredConcentration, computeDepositTrend } from "@/lib/metrics/deposits";
 import { computePeerMedian, buildPeerComparison } from "@/lib/metrics/peers";
 import { parseReportDate } from "@/lib/utils/dates";
 import { InstitutionHeader } from "@/components/institution/InstitutionHeader";
@@ -29,6 +29,7 @@ import { AssetQualityCard } from "@/components/cards/AssetQualityCard";
 import { EarningsCard } from "@/components/cards/EarningsCard";
 import { LiquidityCard } from "@/components/cards/LiquidityCard";
 import { UninsuredDepositCard } from "@/components/cards/UninsuredDepositCard";
+import { DepositTrendCard } from "@/components/cards/DepositTrendCard";
 import type { FailureInfo, MergerInfo } from "@/types/domain";
 
 interface PageProps {
@@ -200,6 +201,9 @@ export default async function BankPage({ params }: PageProps) {
     ? buildPeerComparison(uninsuredConcentration.value, uninsuredPeerMedian, peerGroupName)
     : null;
 
+  // --- Compute Deposit Trend (three series) ---
+  const depositTrend = computeDepositTrend(financials, context);
+
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       {/* Navigation */}
@@ -279,6 +283,13 @@ export default async function BankPage({ params }: PageProps) {
           dataAsOf={context.dataAsOf}
         />
         {/* Remaining 2 cards — Tasks 18-19 */}
+        <DepositTrendCard
+          depositTrend={depositTrend}
+          peerComparison={null}
+          dataAsOf={context.dataAsOf}
+          quartersAvailable={context.quartersAvailable}
+        />
+        {/* Remaining 1 card — Task 19 */}
       </section>
 
       {/* Methodology link */}
