@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -17,7 +18,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {/* Global nav — Property 11: methodology link accessible from every page */}
+        <nav className="border-b border-gray-100 px-4 py-2 flex items-center justify-between text-xs text-gray-500">
+          <Link href="/" className="font-medium hover:text-gray-700">
+            Is My Bank Safe?
+          </Link>
+          <Link href="/methodology" className="hover:text-gray-700 underline">
+            Methodology
+          </Link>
+        </nav>
+        {children}
+      </body>
     </html>
   );
 }
