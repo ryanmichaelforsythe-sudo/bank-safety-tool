@@ -14,6 +14,7 @@ import { resolveInstitutionStatus } from "@/lib/metrics/institutionStatus";
 import { computeCapitalAdequacy } from "@/lib/metrics/capitalAdequacy";
 import { computeAssetQuality, computeAssetQualityTrend } from "@/lib/metrics/assetQuality";
 import { computeEarnings, computeEarningsTrend } from "@/lib/metrics/earnings";
+import { computeLiquidity, computeLiquidityTrend } from "@/lib/metrics/liquidity";
 import { computePeerMedian, buildPeerComparison } from "@/lib/metrics/peers";
 import { parseReportDate } from "@/lib/utils/dates";
 import { InstitutionHeader } from "@/components/institution/InstitutionHeader";
@@ -25,6 +26,7 @@ import { NewlyCharteredNotice } from "@/components/institution/NewlyCharteredNot
 import { CapitalAdequacyCard } from "@/components/cards/CapitalAdequacyCard";
 import { AssetQualityCard } from "@/components/cards/AssetQualityCard";
 import { EarningsCard } from "@/components/cards/EarningsCard";
+import { LiquidityCard } from "@/components/cards/LiquidityCard";
 import type { FailureInfo, MergerInfo } from "@/types/domain";
 
 interface PageProps {
@@ -148,6 +150,34 @@ export default async function BankPage({ params }: PageProps) {
     ? buildPeerComparison(earningsMetrics.nim.value, nimPeerMedian, peerGroupName)
     : null;
 
+  // --- Compute Liquidity metrics ---
+  const liquidityMetrics = mostRecentQuarter
+    ? computeLiquidity(mostRecentQuarter, context.dataAsOf ?? new Date(), context)
+    : {
+        loanToDepositRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+        cashSecuritiesToAssetsRatio: { kind: "missing" as const, reason: "data_not_reported" as const, asOf: null },
+      };
+  const liquidityTrend = computeLiquidityTrend(financials, context);
+  const ltdPeerMedian = peerData.length > 0 ? computePeerMedian(peerData, "LNLSDEPR") : null;
+  // Cash+securities/assets peer median: compute derived ratio for each peer
+  const cashSecPeerMedian = peerData.length > 0
+    ? (() => {
+        const ratios = peerData
+          .filter((p) => p.CASH !== null && p.SC !== null && p.ASSET !== null && (p.ASSET as number) > 0)
+          .map((p) => (((p.CASH as number) + (p.SC as number)) / (p.ASSET as number)) * 100);
+        if (ratios.length === 0) return null;
+        ratios.sort((a, b) => a - b);
+        const mid = Math.floor(ratios.length / 2);
+        return ratios.length % 2 === 0 ? (ratios[mid - 1] + ratios[mid]) / 2 : ratios[mid];
+      })()
+    : null;
+  const ltdPeerComp = liquidityMetrics.loanToDepositRatio.kind === "available"
+    ? buildPeerComparison(liquidityMetrics.loanToDepositRatio.value, ltdPeerMedian, peerGroupName)
+    : null;
+  const cashSecPeerComp = liquidityMetrics.cashSecuritiesToAssetsRatio.kind === "available"
+    ? buildPeerComparison(liquidityMetrics.cashSecuritiesToAssetsRatio.value, cashSecPeerMedian, peerGroupName)
+    : null;
+
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       {/* Navigation */}
@@ -211,6 +241,16 @@ export default async function BankPage({ params }: PageProps) {
           dataAsOf={context.dataAsOf}
         />
         {/* Remaining 4 cards — Tasks 16-19 */}
+        <LiquidityCard
+          loanToDepositRatio={liquidityMetrics.loanToDepositRatio}
+          cashSecuritiesToAssetsRatio={liquidityMetrics.cashSecuritiesToAssetsRatio}
+          ltdPeerComparison={ltdPeerComp}
+          cashSecPeerComparison={cashSecPeerComp}
+          ltdTrend={liquidityTrend.loanToDepositTrend}
+          cashSecTrend={liquidityTrend.cashSecuritiesTrend}
+          dataAsOf={context.dataAsOf}
+        />
+        {/* Remaining 3 cards — Tasks 17-19 */}
       </section>
 
       {/* Methodology link */}
