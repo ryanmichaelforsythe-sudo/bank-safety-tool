@@ -142,7 +142,7 @@ export function BankSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by bank name, city/state, or FDIC certificate number..."
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           autoComplete="off"
           autoFocus
         />
